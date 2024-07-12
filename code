@@ -1,0 +1,63 @@
+
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h> 
+#include <ESP8266HTTPClient.h>
+#include <ArduinoJson.h>
+
+const char* wifiName = "MUTHUPANDI";
+const char* wifiPass = "muthumuthu23";
+
+//Web Server address to read/write from 
+const char *host = "http://192.168.1.6/door/status.php";
+
+   HTTPClient http;
+  WiFiClient client;
+void setup() {
+  
+  Serial.begin(115200);
+  delay(10);
+  Serial.println();
+  pinMode(D1,OUTPUT);
+  Serial.print("Connecting to ");
+  Serial.println(wifiName);
+
+  WiFi.begin(wifiName, wifiPass);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());   //You can get IP address assigned to ESP
+}
+
+void loop() {
+ String payload="";
+  http.begin(client, host);
+  int httpCode = http.GET();  
+  if (httpCode > 0) {
+     payload = http.getString();
+    Serial.println(payload);     //Send the request
+}    //Get the response payload from server
+ StaticJsonDocument<200> doc;
+deserializeJson(doc, payload);
+String status = doc["status"];
+String door = doc["device"];
+String date = doc["date"];
+String time = doc["time"];
+ Serial.println(status); 
+ if(door=="1")
+ {
+   Serial.println("ON"); 
+   digitalWrite(D1,HIGH);
+ }
+ if(door=="0")
+ {
+    digitalWrite(D1,LOW);
+   Serial.println("OFF"); 
+ }
+  delay(500);  //GET Data at every 5 seconds
+}
